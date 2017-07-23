@@ -79,11 +79,11 @@ root@babykube:/home/ubuntu# cd Jinja2-2.9.6
 root@babykube:/home/ubuntu/Jinja2-2.9.6# python setup.py install
 ```
 
-You will also have to install pip and python-netaddr -- not shown.
+You will also have to install pip and python-netaddr (pip install netaddr) -- not shown.
 
 Tweak the main.yaml including the networking method -- I used 'calico'.
 ```
-root@babykube:~/mygit/kubespray# vi roles/kargo-defaults/defaults/main.yaml
+root@babykube:~/mygit/kubespray# vi roles/kubespray-defaults/defaults/main.yaml
 ```
 Run the ansible playbook called cluster.yml.  As you can see, mine took about 4 minutes.
 ```
