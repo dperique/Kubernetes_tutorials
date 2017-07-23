@@ -73,6 +73,7 @@ kube-master
 ```
 
 From your Ubuntu machine, ssh to itself (to ensure you can successfully) and then install ansible.
+Kubespray requires Ansible 2.3.1 or later.
 ```
 root@babykube:/home/ubuntu# ssh babykube
 root@babykube:/home/ubuntu# sudo apt-add-repository ppa:ansible/ansible
