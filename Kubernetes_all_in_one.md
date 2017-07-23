@@ -24,8 +24,16 @@ vi /etc/hosts ;# add an entry for "192.168.99.143 babykube.dpnet.com babykube"
 ping babykube
 ```
 Set it up so that you can ssh to babykube as root from the host babykube and without any yes/no questions.
-This means you will have to generate and add ssh keys for passwordless login and possibly add this to your
-.ssh/config file:
+This means you will have to generate and add ssh keys for passwordless login:
+```
+sudo su
+cd
+ssh-keygen
+cd .ssh
+cp id_rsa.pub authorized_keys
+```
+
+You should also add this to your .ssh/config file to avoid the yes/no questions:
 ```
 Host babykube*
    StrictHostKeyChecking no
