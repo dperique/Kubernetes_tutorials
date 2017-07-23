@@ -143,7 +143,7 @@ kubernetes-apps/ansible : Kubernetes Apps | Start Resources ------------- 1.72s
 download : Download containers if pull is required or told to always pull --- 1.69s
 ```
 
-If kubectl config is not there, you will have to create one like this (in this example,
+If you optionally want to create a kubectl config, create one like this (in this example,
 I named my cluster as 'babykube1' so adjust accordingly):
 
 ```
