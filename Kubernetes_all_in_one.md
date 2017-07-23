@@ -128,7 +128,7 @@ I named my cluster as 'babykube1' so adjust accordingly):
 ```
 cd /etc/kubernetes/ssl
 
-kubectl config set-cluster babykube1 --server=https://babykube1.dpnet.com.com:6443  \
+kubectl config set-cluster babykube1 --server=https://babykube1.dpnet.com:6443  \
     --certificate-authority=ca.pem
 
 kubectl config set-credentials babykube1-admin \
@@ -145,7 +145,7 @@ Here's the actual output:
 ```
 root@babykube1:~/mygit/kubespray# cd /etc/kubernetes/ssl
 
-root@babykube1:/etc/kubernetes/ssl# kubectl config set-cluster babykube1 --server=https://babykube1.dpnet.com.com:6443  \
+root@babykube1:/etc/kubernetes/ssl# kubectl config set-cluster babykube1 --server=https://babykube1.dpnet.com:6443  \
 >     --certificate-authority=ca.pem
 Cluster "babykube1" set.
 
