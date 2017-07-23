@@ -122,6 +122,46 @@ kubernetes-apps/ansible : Kubernetes Apps | Start Resources ------------- 1.72s
 download : Download containers if pull is required or told to always pull --- 1.69s
 ```
 
+If kubectl config is not there, you will have to create one like this (in this example,
+I named my cluster as 'babykube1' so adjust accordingly):
+
+```
+cd /etc/kubernetes/ssl
+
+kubectl config set-cluster babykube1 --server=https://babykube1.dpnet.com.com:6443  \
+    --certificate-authority=ca.pem
+
+kubectl config set-credentials babykube1-admin \
+    --certificate-authority=ca.pem \
+    --client-key=admin-babykube1.dpnet.com-key.pem \
+    --client-certificate=admin-babykube1.dpnet.com.pem
+
+kubectl config set-context babykube1 --cluster=babykube1 --user=babykube1-admin
+
+kubectl config use-context babykube1
+```
+
+Here's the actual output:
+```
+root@babykube1:~/mygit/kubespray# cd /etc/kubernetes/ssl
+
+root@babykube1:/etc/kubernetes/ssl# kubectl config set-cluster babykube1 --server=https://babykube1.dpnet.com.com:6443  \
+>     --certificate-authority=ca.pem
+Cluster "babykube1" set.
+
+root@babykube1:/etc/kubernetes/ssl# kubectl config set-credentials babykube1-admin \
+>     --certificate-authority=ca.pem \
+>     --client-key=admin-babykube1.dpnet.com-key.pem \
+>     --client-certificate=admin-babykube1.dpnet.com.pem
+User "babykube1-admin" set.
+
+root@babykube1:/etc/kubernetes/ssl# kubectl config set-context babykube1 --cluster=babykube1 --user=babykube1-admin
+Context "babykube1" set.
+
+root@babykube1:/etc/kubernetes/ssl# kubectl config use-context babykube1
+Switched to context "babykube1".
+```
+
 Run the usual Quickstart hello-minikube application to confirm your all-in-one Kubernetes cluster
 is functional.
 
