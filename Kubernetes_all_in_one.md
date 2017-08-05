@@ -19,13 +19,42 @@ I'll refer to this as an all-in-one Kubernetes cluster.  This is what I did to c
 
 Make a Unbuntu VM (I used Xenial 16.04) or get a physical Ubuntu machine.  I call the machine 'babykube'.
 ```
+PLEASE ENSURE YOUR VM HAS AT LEAST 2G OF RAM!
+If you have less than 2G of RAM, you may get issues where your hello-minikube pod is in "Pending" state
+with no events in the 'kubectl describe pod hello-minikube' output.
+
 $ ssh ubuntu@192.168.99.134
 vi /etc/hosts ;# add an entry for "192.168.99.143 babykube.dpnet.com babykube"
 ping babykube
 ```
+
+Here's what my /etc/hosts looks like when I created one called 'babykube1':
+```
+# cat /etc/hosts
+127.0.0.1	localhost
+127.0.1.1	babykube1
+
+# The following lines are desirable for IPv6 capable hosts
+::1     ip6-localhost ip6-loopback
+fe00::0 ip6-localnet
+ff00::0 ip6-mcastprefix
+ff02::1 ip6-allnodes
+ff02::2 ip6-allrouters
+
+192.168.99.104 babykube1.dpnet.com babykube1
+```
+
 Set it up so that you can ssh to babykube as root from the host babykube and without any yes/no questions.
-This means you will have to generate and add ssh keys for passwordless login and possibly add this to your
-.ssh/config file:
+This means you will have to generate and add ssh keys for passwordless login:
+```
+sudo su
+cd
+ssh-keygen
+cd .ssh
+cp id_rsa.pub authorized_keys
+```
+
+You should also add this to your .ssh/config file to avoid the yes/no questions:
 ```
 Host babykube*
    StrictHostKeyChecking no
@@ -65,6 +94,7 @@ kube-master
 ```
 
 From your Ubuntu machine, ssh to itself (to ensure you can successfully) and then install ansible.
+Kubespray requires Ansible 2.3.1 or later.
 ```
 root@babykube:/home/ubuntu# ssh babykube
 root@babykube:/home/ubuntu# sudo apt-add-repository ppa:ansible/ansible
@@ -79,11 +109,11 @@ root@babykube:/home/ubuntu# cd Jinja2-2.9.6
 root@babykube:/home/ubuntu/Jinja2-2.9.6# python setup.py install
 ```
 
-You will also have to install pip and python-netaddr -- not shown.
+You will also have to install pip and python-netaddr (pip install netaddr) -- not shown.
 
 Tweak the main.yaml including the networking method -- I used 'calico'.
 ```
-root@babykube:~/mygit/kubespray# vi roles/kargo-defaults/defaults/main.yaml
+root@babykube:~/mygit/kubespray# vi roles/kubespray-defaults/defaults/main.yaml
 ```
 Run the ansible playbook called cluster.yml.  As you can see, mine took about 4 minutes.
 ```
@@ -111,6 +141,46 @@ download : Download containers if pull is required or told to always pull --- 2.
 download : Download containers if pull is required or told to always pull --- 1.93s
 kubernetes-apps/ansible : Kubernetes Apps | Start Resources ------------- 1.72s
 download : Download containers if pull is required or told to always pull --- 1.69s
+```
+
+If you optionally want to create a kubectl config, create one like this (in this example,
+I named my cluster as 'babykube1' so adjust accordingly):
+
+```
+cd /etc/kubernetes/ssl
+
+kubectl config set-cluster babykube1 --server=https://babykube1.dpnet.com:6443  \
+    --certificate-authority=ca.pem
+
+kubectl config set-credentials babykube1-admin \
+    --certificate-authority=ca.pem \
+    --client-key=admin-babykube1.dpnet.com-key.pem \
+    --client-certificate=admin-babykube1.dpnet.com.pem
+
+kubectl config set-context babykube1 --cluster=babykube1 --user=babykube1-admin
+
+kubectl config use-context babykube1
+```
+
+Here's the actual output:
+```
+root@babykube1:~/mygit/kubespray# cd /etc/kubernetes/ssl
+
+root@babykube1:/etc/kubernetes/ssl# kubectl config set-cluster babykube1 --server=https://babykube1.dpnet.com:6443  \
+>     --certificate-authority=ca.pem
+Cluster "babykube1" set.
+
+root@babykube1:/etc/kubernetes/ssl# kubectl config set-credentials babykube1-admin \
+>     --certificate-authority=ca.pem \
+>     --client-key=admin-babykube1.dpnet.com-key.pem \
+>     --client-certificate=admin-babykube1.dpnet.com.pem
+User "babykube1-admin" set.
+
+root@babykube1:/etc/kubernetes/ssl# kubectl config set-context babykube1 --cluster=babykube1 --user=babykube1-admin
+Context "babykube1" set.
+
+root@babykube1:/etc/kubernetes/ssl# kubectl config use-context babykube1
+Switched to context "babykube1".
 ```
 
 Run the usual Quickstart hello-minikube application to confirm your all-in-one Kubernetes cluster
