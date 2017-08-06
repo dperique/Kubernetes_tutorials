@@ -94,6 +94,12 @@ Convert the image to vmdk format for VMware Fusion:
 $ qemu-img convert -f qcow2 dp-ubuntu.qcow2 -O vmdk dp-ubuntu.vmdk
 ```
 
+For Virtual Box, you will need the .vdi format.  Convert the image to vdi format for Virtual Box like this:
+
+```
+$ qemu-img convert -f qcow2 ../dp-ubuntu.qcow2 -O vdi dp-ubuntu.vdi
+```
+
 Get the .vmdk to your machine that has VMware Fusion installed.  You can use scp for example.
 
 Create a VM in VMware Fusion and tell Fusion to use the .vmdk image file you just copied.  Here's what
