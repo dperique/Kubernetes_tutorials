@@ -1,5 +1,8 @@
 # Some Techniques used with Disk Image Builder
 
+## Introduction
+This doc lists a few techniques I used when creating my own images using disk image builder.
+
 ## Copy files from your host to the image
 Think of this an "injecting" files into an image -- e.g., ssh keys, and other scripts that might
 be useful to the user of the resultant image.
