@@ -26,11 +26,12 @@ so that the /etc/mykeys/id.pub.rsa file will be copied to /root/.ssh/authorized_
 The element directory structure will be a subdirectory called 'copy_keys' and two subdirectories underneath it
 called extra-data.d and install.d.  There will be one script inside each directory -- 99-copy-keys and 20-install-keys.
 
-- copy_keys
-  - extra-data.d
-    - 99-copy-keys
-  - install.d
-    - 20-install-keys
+- elements
+  - copy_keys
+    - extra-data.d
+      - 99-copy-keys
+    - install.d
+      - 20-install-keys
 
 The 99-copy-keys script:
 
@@ -64,4 +65,14 @@ image.  The /tmp/in_target.d directory is available inside the image for files y
 extra-data.d scripts.
 
 The scripts must be executable -- if they are not, they are skipped.
+
+Remeber to set your ELEMENTS_PATH environment variable to include the directory called `elements` above
+so that disk-image-create can find your element.
+
+You can run the disk-image-create command like this example:
+
+```
+$ disk-image-create --image-size 4G -o ~/myimage vm ubuntu copy_keys
+```
+
 
