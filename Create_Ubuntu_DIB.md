@@ -158,3 +158,20 @@ Note that you can use the same commands above to create a centos VM as well.
 Notice there was very little interaction involved -- no GUIs and questions to answer and no adding your
 key and/or username/password manually.  I know going forward, I will most likely never use the old "install
 from ISO method" again.
+
+# Optional: Mount the qcow2 image using [qemu-nbd]
+
+[qemu-nbd]: http://manpages.ubuntu.com/manpages/zesty/man8/qemu-nbd.8.html
+
+```
+$ sudo apt-get -y install qemu-utils
+$ sudo modprobe nbd
+$ sudo qemu-nbd -c /dev/nbd1 ~/dp-ubuntu.qcow2
+$ sudo mount /dev/nbd1p1 /mnt
+$ sudo chroot /mnt
+
+< Confirm your files are present, etc. >
+< exit or control-d to exit from chroot >
+
+$ sudo umount /mnt
+$ sudo qemu-nbd -d /dev/nbd1
