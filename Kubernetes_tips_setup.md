@@ -2,12 +2,28 @@
 
 ## How to setup Kubernetes docker registry keys
 
-Inspired by [docker secrets doc].
-[docker secrets doc]: https://kubernetes.io/docs/concepts/configuration/secret/
+Inspired by [this doc].
+
+[this doc]: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/ 
 
 If you are going to deploy from your local docker registry, you can create your docker registry
 and then tell Kubernetes to pull images from there.  The default is to pull them from hub.docker.com.
 In the example below, we assume that I already created my own docker registry docker.dennis.com.
+
+Note that there are different types of secrets (we are interested in the first one):
+
+```
+$ kubectl  create secret -h
+Create a secret using specified subcommand.
+
+Available Commands:
+  docker-registry Create a secret for use with a Docker registry
+  generic         Create a secret from a local file, directory or literal value
+  tls             Create a TLS secret
+
+Usage:
+  kubectl create secret [options]
+```
 
 The first thing you need to do is setup the docker-registry secret like in this example:
 ```
