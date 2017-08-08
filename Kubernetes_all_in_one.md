@@ -18,11 +18,11 @@ hypervisor that does not support nested virtualization.
 I'll refer to this as an all-in-one Kubernetes cluster.  This is what I did to create one:
 
 Make a Unbuntu VM (I used Xenial 16.04) or get a physical Ubuntu machine.  I call the machine 'babykube'.
-```
 PLEASE ENSURE YOUR VM HAS AT LEAST 2G OF RAM!
 If you have less than 2G of RAM, you may get issues where your hello-minikube pod is in "Pending" state
 with no events in the 'kubectl describe pod hello-minikube' output.
 
+```
 $ ssh ubuntu@192.168.99.134
 vi /etc/hosts ;# add an entry for "192.168.99.143 babykube.dpnet.com babykube"
 ping babykube
