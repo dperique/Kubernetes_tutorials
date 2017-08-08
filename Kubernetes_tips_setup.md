@@ -62,7 +62,7 @@ metadata:
 type: kubernetes.io/dockercfg
 ```
 
-Now that you have the hex string, do this to see the decoded version (including my password which is revealeed as "aPassword"):
+Now that you have the hex string, do this to see the decoded version (including my password which is revealed as "aPassword"):
 ```
 $ echo eyJkb2NrZXIuZGVubmlzLmNvbSI6eyJ1c2VybmFtZSI6ImRwZXJpcXVlIiwicGFzc3dvcmQiOiJhUGFzc3dvcmQiLCJlbWFpbCI6ImRwZXJpcXVlQGdtYWlsLmNvbSIsImF1dGgiOiJaSEJsY21seGRXVTZZVkJoYzNOM2IzSmsifX0= | base64 --decode
 {"docker.dennis.com":{"username":"dperique","password":"aPassword","email":"dperique@gmail.com","auth":"ZHBlcmlxdWU6YVBhc3N3b3Jk"}}`
