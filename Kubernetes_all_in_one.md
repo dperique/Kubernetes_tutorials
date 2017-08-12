@@ -17,55 +17,62 @@ hypervisor that does not support nested virtualization.
 [minikube]: https://github.com/kubernetes/minikube
 I'll refer to this as an all-in-one Kubernetes cluster.  This is what I did to create one:
 
-Make a Unbuntu VM (I used Xenial 16.04) or get a physical Ubuntu machine.  I call the machine 'babykube'.
+### Make a Unbuntu VM (I used Xenial 16.04) or get a physical Ubuntu machine.
 
-PLEASE ENSURE YOUR VM HAS AT LEAST 2G OF RAM!
+I call the machine 'babykube'.
+**PLEASE ENSURE YOUR VM HAS AT LEAST 2G OF RAM!**
 If you have less than 2G of RAM, you may get issues where your hello-minikube pod is in "Pending" state
 with no events in the 'kubectl describe pod hello-minikube' output.
 
+Add an entry for host address to /etc/hosts
 ```
 $ ssh ubuntu@192.168.99.134
-vi /etc/hosts ;# add an entry for "192.168.99.143 babykube.dpnet.com babykube"
-ping babykube
+echo "192.168.99.134 babykube1.example.com babykube1" | sudo tee -a /etc/hosts
+ping -c 3 babykube1
 ```
 
 Here's what my /etc/hosts looks like when I created one called 'babykube1':
 ```
-# cat /etc/hosts
-127.0.0.1	localhost
-127.0.1.1	babykube1
+ubuntu@babykube:~$ cat /etc/hosts
+127.0.0.1    babykube    babykube
+127.0.0.1    localhost
 
 # The following lines are desirable for IPv6 capable hosts
-::1     ip6-localhost ip6-loopback
-fe00::0 ip6-localnet
-ff00::0 ip6-mcastprefix
-ff02::1 ip6-allnodes
-ff02::2 ip6-allrouters
+::1    ip6-localhost    ip6-loopback
+fe00::0    ip6-localnet
+ff00::0    ip6-mcastprefix
+ff02::1    ip6-allnodes
+ff02::2    ip6-allrouters
+ff02::3    ip6-allhosts
+127.0.1.1    ubuntu-xenial    ubuntu-xenial
 
-192.168.99.104 babykube1.dpnet.com babykube1
+192.168.99.134 babykube1.example.com babykube1
 ```
 
 Set it up so that you can ssh to babykube as root from the host babykube and without any yes/no questions.
 This means you will have to generate and add ssh keys for passwordless login:
 ```
 sudo su
-cd
-ssh-keygen
-cd .ssh
-cp id_rsa.pub authorized_keys
+mkdir -pv /root/.ssh && cd /root/.ssh
+ssh-keygen -t rsa -N '' -C "test@example.com" -f ./id_rsa
+cat id_rsa.pub >> authorized_keys
 ```
 
 You should also add this to your .ssh/config file to avoid the yes/no questions:
 ```
+root@babykube:~# cat <<EOT >> /root/.ssh/config
+
 Host babykube*
    StrictHostKeyChecking no
    UserKnownHostsFile=/dev/null
    CheckHostIP=no
+
+EOT
 ```
+
 Clone the kubespray repo, make an inventory.ini file (mine is shown below).
 ```
-root@babykube:~# mkdir mygit
-root@babykube:~# cd mygit/
+root@babykube:~# cd && mkdir -pv mygit && cd mygit
 root@babykube:~/mygit# git clone https://github.com/kubernetes-incubator/kubespray
 Cloning into 'kubespray'...
 remote: Counting objects: 14268, done.
@@ -74,51 +81,52 @@ Receiving objects: 100% (14268/14268), 5.65 MiB | 0 bytes/s, done.
 Resolving deltas: 100% (7614/7614), done.
 Checking connectivity... done.
 
-root@babykube:~/mygit# cd kubespray/inventory/
-root@babykube:~/mygit# vi kubespray/inventory/inventory.ini
+Create inventory.ini
 ...
-root@babykube:~/mygit/kubespray/inventory# cat inventory.ini
-babykube.dpnet.com ansible_host=192.168.99.134 ansible_user=root
-
-[kube-master]
-babykube.dpnet.com
+root@babykube:~/mygit# cat <<EOT >> ./kubespray/inventory/inventory.ini
+babykube.example.com ansible_host=192.168.99.134 ansible_user=root
 
 [etcd]
-babykube.dpnet.com
+babykube1.example.com
+
+[kube-master]
+babykube1.example.com
 
 [kube-node]
-babykube.dpnet.com
+babykube1.example.com
 
 [k8s-cluster:children]
 kube-node
 kube-master
+
+EOT
 ```
 
 From your Ubuntu machine, ssh to itself (to ensure you can successfully) and then install ansible.
 Kubespray requires Ansible 2.3.1 or later.
 ```
-root@babykube:/home/ubuntu# ssh babykube
-root@babykube:/home/ubuntu# sudo apt-add-repository ppa:ansible/ansible
-root@babykube:/home/ubuntu# sudo apt-get update
-root@babykube:/home/ubuntu# sudo apt-get install ansible
+root@babykube:/home/ubuntu# ssh babykube1
+apt-add-repository -y ppa:ansible/ansible ; \
+apt-get update && apt install -y ansible
 ```
 
-Install Jinja 2.9
+Install Jinja 2.9 and pip install netaddr
 ```
-root@babykube:/home/ubuntu# tar xzvf Jinja2-2.9.6.tar.gz 
-root@babykube:/home/ubuntu# cd Jinja2-2.9.6
-root@babykube:/home/ubuntu/Jinja2-2.9.6# python setup.py install
+apt install -y python-jinja2 python-pip && \
+pip install netaddr
 ```
 
-You will also have to install pip and python-netaddr (pip install netaddr) -- not shown.
-
-Tweak the main.yaml including the networking method -- I used 'calico'.
+*Optional:* Tweak the main.yaml including the networking method -- I used 'calico'.
 ```
+root@babykube:~# cd ~/mygit/kubespray/
 root@babykube:~/mygit/kubespray# vi roles/kubespray-defaults/defaults/main.yaml
 ```
+
 Run the ansible playbook called cluster.yml.  As you can see, mine took about 4 minutes.
 ```
-root@babykube:~/mygit/kubespray# ansible-playbook -i ./inventory/inventory.ini cluster.yml -b -v --flush-cache
+root@babykube:~# cd ~/mygit/kubespray/ && \
+ansible-playbook -i ./inventory/inventory.ini cluster.yml -b -v --flush-cache
+
 ...
 Saturday 22 July 2017  22:58:24 +0000 (0:00:00.012)       0:04:03.481 ********* 
 =============================================================================== 
@@ -150,13 +158,13 @@ I named my cluster as 'babykube1' so adjust accordingly):
 ```
 cd /etc/kubernetes/ssl
 
-kubectl config set-cluster babykube1 --server=https://babykube1.dpnet.com:6443  \
+kubectl config set-cluster babykube1 --server=https://babykube1.example.com:6443  \
     --certificate-authority=ca.pem
 
 kubectl config set-credentials babykube1-admin \
     --certificate-authority=ca.pem \
-    --client-key=admin-babykube1.dpnet.com-key.pem \
-    --client-certificate=admin-babykube1.dpnet.com.pem
+    --client-key=admin-babykube1.example.com-key.pem \
+    --client-certificate=admin-babykube1.example.com.pem
 
 kubectl config set-context babykube1 --cluster=babykube1 --user=babykube1-admin
 
@@ -167,14 +175,14 @@ Here's the actual output:
 ```
 root@babykube1:~/mygit/kubespray# cd /etc/kubernetes/ssl
 
-root@babykube1:/etc/kubernetes/ssl# kubectl config set-cluster babykube1 --server=https://babykube1.dpnet.com:6443  \
+root@babykube1:/etc/kubernetes/ssl# kubectl config set-cluster babykube1 --server=https://babykube1.example.com:6443  \
 >     --certificate-authority=ca.pem
 Cluster "babykube1" set.
 
 root@babykube1:/etc/kubernetes/ssl# kubectl config set-credentials babykube1-admin \
 >     --certificate-authority=ca.pem \
->     --client-key=admin-babykube1.dpnet.com-key.pem \
->     --client-certificate=admin-babykube1.dpnet.com.pem
+>     --client-key=admin-babykube1.example.com-key.pem \
+>     --client-certificate=admin-babykube1.example.com.pem
 User "babykube1-admin" set.
 
 root@babykube1:/etc/kubernetes/ssl# kubectl config set-context babykube1 --cluster=babykube1 --user=babykube1-admin

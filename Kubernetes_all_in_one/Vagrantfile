@@ -1,0 +1,31 @@
+require 'yaml'
+
+vagrant_config = YAML.load_file("vagrant.conf.yml")
+
+$apt_upgrade = <<SCRIPT
+  apt-get update && \
+  apt-get -y upgrade && \
+  echo "apt upgraded"
+SCRIPT
+
+Vagrant.configure(2) do |config|
+  config.vm.box_check_update = false
+  config.ssh.shell = "bash -c 'BASH_ENV=/etc/profile exec bash'" # avoids 'stdin: is not a tty' error.
+
+  config.vm.define "ubuntu", primary: true, autostart: vagrant_config['ubuntu']['autostart'] do |ubuntu|
+    ubuntu.vm.box = vagrant_config['ubuntu']['box']
+    ubuntu.vm.hostname = vagrant_config['ubuntu']['host_name']
+    ## ubuntu.vm.network "private_network", ip: vagrant_config['ubuntu']['secondary_ip'], virtualbox__intnet: "vboxnet0", auto_config: true
+    ubuntu.vm.network "private_network", ip: vagrant_config['ubuntu']['secondary_ip'], auto_config: true
+
+    ubuntu.vm.provider :virtualbox do |vb|
+      # vb.gui = true
+      vb.memory = vagrant_config['ubuntu']['memory']
+      vb.cpus = vagrant_config['ubuntu']['cpus']
+      vb.customize ["modifyvm", :id, "--nictype1", "virtio"]
+    end
+
+    ubuntu.vm.provision "apt_upgrade", type: "shell", inline: $apt_upgrade
+  end
+end
+
