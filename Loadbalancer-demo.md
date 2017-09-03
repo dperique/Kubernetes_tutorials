@@ -48,8 +48,7 @@ did to troubleshoot.  I put a long sleep at the end to ensure the container rema
 ```
 $ cat Dockerfile 
 FROM grpc/python:1.0-onbuild
-ADD requirements.txt checker_client.py checker_server.py checker_pb2_grpc.py checker_pb2.py /
-RUN pip install -r requirements.txt
+ADD checker_client.py checker_server.py checker_pb2_grpc.py checker_pb2.py /
 WORKDIR /
 CMD ["sleep", "100000”]  <— put this
 CMD ["python", "checker_server.py"]
