@@ -1,0 +1,13 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: dperique-grpc-service
+spec:
+  selector:
+    app: dperique_grpc_demo
+  ports:
+    - protocol: TCP
+      port: 50099
+      targetPort: 50099
+      nodePort: 30009
+  type: NodePort

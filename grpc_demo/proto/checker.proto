@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+service Checker {
+    rpc getFood(Person) returns (FoodItem);
+    rpc getToy(Person) returns (ToyItem);
+}
+
+message Person {
+    string firstName = 1;
+    string lastName = 2;
+}
+
+message FoodItem {
+    string item = 1;
+    int32 number = 2;
+}
+
+message ToyItem {
+    string item = 1;
+    int32 number = 2;
+}
+

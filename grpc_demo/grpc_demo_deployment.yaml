@@ -1,0 +1,42 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: dperique-grpc-demo
+spec:
+  replicas: 4
+  template:
+    metadata:
+      labels:
+        app: dperique_grpc_demo
+    spec:
+      containers:
+      - name: dperique-grpc-demo
+        image: my.docker-reg.org/dperique_grpc_demo:v1
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 50099
+        env:
+        - name: MY_NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: MY_POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: MY_POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: MY_POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        - name: MY_POD_SERVICE_ACCOUNT
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.serviceAccountName
+      imagePullSecrets:
+        - name: regsecret
+  revisionHistoryLimit: 9
+
