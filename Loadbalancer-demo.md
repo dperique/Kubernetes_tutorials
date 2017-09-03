@@ -1,4 +1,4 @@
-# Demo of load balancer and service
+# Demo of Kubernetes service and load balancer
 
 Below, I have a demo where I deploy a grpc demo server and client with multiple replicas in
 a multi-node Kubernetes cluster.  I then create a Kubernetes service and run the client.  The service
