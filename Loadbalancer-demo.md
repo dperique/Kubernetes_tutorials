@@ -101,7 +101,7 @@ my.docker-reg.org/dperique_grpc_demo   v1               c19938e1707c        7 mi
 $ docker push my.docker-reg.org/dperique_grpc_demo:v1
 ```
 
-Take a look at the deployment yaml and note that it will create 3 replicas.  The yaml also shows how
+Take a look at the deployment yaml and note that it will creates 3 replicas.  The yaml also shows how
 to add environment variable access to the containers, the image name, and imagePullPolicy.
 
 ```
