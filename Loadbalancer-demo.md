@@ -6,7 +6,7 @@ dumps out the name of the pod that was used and the node it resides on.  The dem
 that with the service, you automatically get a load balancer that sends forwards requests to
 different instances of the server application running on different nodes.
 
-First, clone this repo containing the grpc demo scripts (coming soon) and set context to a
+First, clone this repo containing the grpc demo scripts and set context to a
 multi-node Kubernetes cluster.  Mine is called dp-kub.  Creating and setting up your own multi-node
 Kubernetes cluster is out of the scope of this demo (but you can look up "kubespray").
 
