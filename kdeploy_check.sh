@@ -42,10 +42,10 @@ for i in {1..10}; do
   fi
 
   echo "currently Available = '$currRep' out of '$numRep'"
-  echo $numRep
 
   if [ "$currRep" -ne "$numRep" ]; then
-    echo "All replicas not present"
+    echo "All replicas not present after $i iterations"
+    echo ""
     sleep 1
   else
     good=1
