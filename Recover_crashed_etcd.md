@@ -163,6 +163,13 @@ Pod Template:
       http://0.0.0.0:2380
       --listen-client-urls
       http://0.0.0.0:2379
+      --data-dir=/var/lib/etcd/data
+      --wal-dir=/var/lib/etcd/wal
+      --election-timeout=1000
+      --heartbeat-interval=100
+      --snapshot-count=10000
+      --max-snapshots=5
+      --max-wals=5
       --advertise-client-urls
       http://etcd1:2379
       --initial-cluster
