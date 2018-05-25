@@ -48,7 +48,9 @@ we must have:
     and if those tests pass, do the same upgrade activity on the
     production cluster.  This way we already know it works.
 * Repeat this until the entire cluster is upgraded
-* For kubespray users: Use the kubespray "upgrade" playbook by setting the git tag and
+* For kubespray users: Use the
+  kubespray [upgrade playbook](https://github.com/kubernetes-incubator/kubespray/blob/master/upgrade-cluster.yml)
+  by setting the git tag and
   running the playbook with an inventory of the nodes you wish to upgrade.
   You can set this inventory to one node, several nodes, or all nodes.
 * Do not upgrade more than 2 releases (but it is safer to upgrade
