@@ -38,9 +38,19 @@ we must have:
     ensures that your yaml files are working and allows you to
     update them in a non-disruptive way if they are not.
   * If you do not perform this step, you may have running and functioning
-    workloads post Kubernetes upgrade but when you go to deploy an upgrade
+    workloads after your Kubernetes upgrade but when you go to deploy an upgrade
     using your existing yaml
     files, the `kubectl apply -f` may fail.
+  * When running your CI test, include tests that use any utilities that you
+    may have installed onto your Kubernetes cluster as certain utilities may
+    not work on the new Kubernetes version
+    * For example, if you are using fluentd on Kubernetes 1.7.5 and then
+      upgrade to Kubernetes 1.8.x, fluentd may stop working because newer
+      versions of Kubernetes required the default service account to have
+      permissions to view cluster resources.
+    * Another example is you are using helm/tiller in Kubernetes 1.7.5 and then
+      upgrade to Kubernetes 1.8.x.  Tiller may no longer work due to need
+      for a service account in Kubernetes 1.8.x.
 * Upgrade Kubernetes, one node at a time by migrating workloads off of the
   Kubernetes nodes you intend to upgrade, upgrading that node, and allowing
   workloads to use that upgraded node
