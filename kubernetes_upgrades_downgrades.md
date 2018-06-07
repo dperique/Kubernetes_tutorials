@@ -5,9 +5,6 @@ of nodes from one Kubernetes version to another is something we all worry
 about especially if you have workloads that are providing a service to customers
 with a particular SLA.
 
-Also upgrades come well after we have learned to create a Kubernetes in the
-first place and is often not added to the schedule.
-
 Here is some knowledge I have gathered on the topic.
 
 ## Having CI (Continuous Integration), Staging, and Production Environments
@@ -16,7 +13,8 @@ In order to do upgrades/downgrades that are relatively safe and predictable,
 we must have:
 
 * Both a production and staging Kubernetes cluster that are as
-  close to equivalent as possible (e.g., staging can be based on VMs)
+  close to equivalent as possible (e.g., if your production cluster is
+  deployed on bare metal, staging can be based on VMs)
 * A Kubernetes cluster for CI testing that is as close to production as
   possible.  Minikube may not be enough.  This Kubernetes cluster can be
   based on VMs just as staging is.
@@ -32,8 +30,9 @@ we must have:
   that your yamls will work when you run `kubectl apply -f` and that your
   workloads, once deployed, will function as expected.
   * I insist on this step because although after a Kubernetes upgrade, already
-    running workloads are guaranteed to continue to run, your yaml manifest
-    files may not be compatible with the new Kubernetes version and may need
+    running workloads are guaranteed to continue to run, yaml manifest
+    files are not guaranteed to work, and, may not be compatible with the new
+    Kubernetes version and may need
     updating.  Running and passing the CI test
     ensures that your yaml files are working and allows you to
     update them in a non-disruptive way if they are not.
@@ -60,7 +59,7 @@ we must have:
 * Repeat this until the entire cluster is upgraded
 * For kubespray users: Use the
   kubespray [upgrade playbook](https://github.com/kubernetes-incubator/kubespray/blob/master/upgrade-cluster.yml)
-  by setting the git tag and
+  by setting the git tag on kubespray where that playbook exists and
   running the playbook with an inventory of the nodes you wish to upgrade.
   You can set this inventory to one node, several nodes, or all nodes.
 * Do not upgrade more than 2 releases (but it is safer to upgrade
@@ -74,12 +73,13 @@ don't notice anything.
 
 * Upgrading "gracefully" (i.e., without service downtime) is a different topic
   but can be integrated as needed in the upgrade process.  
-* Upgrading one Kubernetes node at a time narrows the scope of making graceful
-  uprades to being able to move workloads to another Kubernetes node without
+* Upgrading one Kubernetes node at a time narrows the scope of "making graceful
+  uprades" to being able to move workloads to another Kubernetes node without
   any service disruption.  This can be done using more than one pod replica, tweaking
-  your loadbalancer to stop using a service container that is to be migrated,
+  your loadbalancer to stop using a service pod that is to be migrated,
   gracefully shutting down services (i.e., allowing in-flight transactions to
-  complete), and stopping the container.
+  complete), and stopping the pod so that it can be migrated to a different Kubernetes
+  worker node.
   * After the upgrade is complete, you can add the pod back into the load
     balancer
 
