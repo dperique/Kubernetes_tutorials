@@ -216,6 +216,16 @@ You can always use the kubespray cluster-upgrade.yml playbook to upgrade all nod
 Kubernetes cluster.  This playbook upgrades your Kubernetes cluster one node at a time; it
 will drain/cordone nodes as it performs the upgrade.
 
+Before running the cluster-upgrade.yml playbook, ensure that all nodes can be drained.  Draining
+may result in error for certain types of deployments.  For example, if the etcd-operator
+deployment resides on a node, the `kubectl drain` command fails.
+
+NOTE: Before installing anything on your
+Kubernetes nodes, it is imporant to understand the implications when it comes time to upgrade
+Kubernetes using your preferred method.  For example, if etcd-operator will cause problems with
+draining, ensure you uninstall it first before performing an upgrade or the cluster-upgrade.yml
+playbook will fail.
+
 I personally would rather upgrade one node at a time and see how it goes before proceeding to the
 next node.  This allows me better control to ensure that my Kubernetes cluster continues to
 provide service in a non-disruptive way (i.e., no downtime).
