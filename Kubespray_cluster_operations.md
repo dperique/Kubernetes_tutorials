@@ -192,12 +192,12 @@ In this case, you want to just add one more node to your Kubernetes cluster.  Th
 be a pure "worker" node (i.e., it will not be a master or etcd node).  You can add the
 new node using the cluster.yml or scale.yml playbooks.  I use cluster.yml in my instructions.
 
-* add your new worker node into your inventory under the `[kube-nodei]` group
+* add your new worker node into your inventory under the `[kube-node]` group
 * run kubespray/cluster.yml `--limit x` where x is the new node.
   * Ensure you run with `--limit x` only after running it without `--limit x` because kubespray will
     abort due to undefined variables like this: `FAILED! => {"msg": "The field 'environment' has an
     invalid value, which includes an undefined variable.`
-  * Running kubespray/cluster.yml on a working cluster that was build by kubespray should cause no harm.
+  * Running kubespray/cluster.yml on a working cluster that was built by kubespray should cause no harm.
 
 Run `kubectl get node` and you will see the new node.
 
