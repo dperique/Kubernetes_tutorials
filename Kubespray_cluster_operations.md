@@ -238,7 +238,34 @@ To upgrade one node at a time, I do this:
 * follow the same procedures above for replacing nodes except
   when you run the cluster.yml playbook, first set the git tag on the kubespray repo to the next higher
   tag which uses the next set of versions of software you want to use.
+  Realize that upgrading this way will upgrade the versions but can be unsafe because there may be yaml
+  incompatibilities.  Resolve the yaml incompatibilities first using a staging environment.
   * if you have no ansible cache, run cluster.yml once with no inventory changes and with
     the kubespray tag that was used to build that node; this should result in no changes.
   * run the cluster.yml playbook with the `--limit x` option where x is the name of the node
     to be upgraded.
+  * Here is a set of variables and versions known to work for me on kubespray release v2.4.0; my purpose
+    was to stick with the versions on kubespray v2.4.0 but upgrade a few things.  I was able to wipe
+    my machines and run kubespray with these variables to get to these versions:
+
+```
+helm_enabled: true
+helm_version: v2.8.2
+
+# Bump to later Kubernetes.
+kube_version: v1.10.9
+
+# Required for kubespray v2.4.0 and kube_version: v1.10.6+
+hyperkube_image_repo: "gcr.io/google-containers/hyperkube"
+hyperkube_image_tag: v1.10.9
+
+# updated kubedns
+kubedns_version: 1.14.13
+
+# upgrade calico
+calico_version: "v2.6.8"
+calico_ctl_version: "v1.6.3"
+calico_cni_version: "v1.11.4"
+calico_policy_version: "v1.0.3"
+calico_rr_version: "v0.4.2"
+```
