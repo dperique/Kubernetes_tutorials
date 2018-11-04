@@ -1,4 +1,4 @@
-# Image preloading and Container upgardes
+# Image Preloading and Container Upgrades
 
 ## Introduction
 
