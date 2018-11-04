@@ -52,6 +52,10 @@ image is already loaded on each of your Kubernetes nodes and so rolling out
 the new version will be a lot more predictable (e.g., faster and without
 having to deal with image load problems.
 
+NOTE: if you have time, it's probably a good idea to design your container
+image so that it can load and do nothing.  This will ensure that by default
+it will not disturb any existing deployment.
+
 ## Example Scripting
 
 First label the Kubernetes nodes you want the image to load on.
@@ -69,6 +73,37 @@ I remove the label there.
 ```
 kubectl label nodes my-cluster-node-10 load-image-
 ```
+
+Here's the daemonsetup yaml -- adjust as needed.
+
+```
+apiVersion: apps/v1beta2
+kind: DaemonSet
+metadata:
+  name: load-image
+spec:
+  selector:
+    matchLabels:
+      name: load-image
+  template:
+    metadata:
+      labels:
+        name: load-image
+    spec:
+      containers:
+      - name: do-nothing
+        image: my.docker.registry/project/dennis-project:IMAGE
+        imagePullPolicy: IfNotPresent
+      terminationGracePeriodSeconds: 5
+      imagePullSecrets:
+        - name: my-image-pull-secret
+      restartPolicy: Always
+```
+
+The image `dennis-project` loads and sleeps by default when we pass no parameters.
+I set the `terminationGracePeriodSeconds` to something low (5 seconds) so the
+container will get deleted relatively quickly -- as there is no need to delay it
+since it does nothing anyway.
 
 Run this script for the first time; the variable `MY_TAG` will be the image
 tag to use for subsequent upgrades.  But I start out with my initial rollout
