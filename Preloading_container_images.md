@@ -110,3 +110,35 @@ kubectl apply -f /tmp/new_image.yaml
 kubectl rollout status ds/load-image
 ```
 
+## Performing an image upgrade using image preloading
+
+Suppose you have a new image with tag 1.0.1 and you want to roll out an upgrade.
+Set the `MY_TAG` variable to that version:
+
+```
+export MY_TAG=1.0.1
+```
+
+Run the script in the previous section.
+
+There are two ways to run the script:
+
+* Delete the daemonset first (if it exists): this will make it so that the images
+  get loaded onto each Kubernetes node simultaneously.  This is faster but will
+  put your docker registry under more load.
+* Apply the new image tag to the yaml and `kubectl apply` the new yaml: this will
+  run a rolling upgrade to the daemonset.  That is, the image will be pulled for
+  each pod in the daemonset one at a time.  This will be slower (due to the fact
+  that it is serial in nature); but the load on the docker registry will be lower.
+
+After the script is successfully run and all pods in the daemonset are in Running
+state, proceed with your container upgrade procedures.
+
+## Troubleshoot image problems before container upgrades
+
+If there is a problem loading the images on your Kubernetes nodes, address them before
+doing any container upgrades.  This can include a number of activities including
+mitigating any network connectivity, authentication, or image timeout problems.
+
+When you are done mitigating the problems, rerun the script above and ensure
+the daemonset pods are all created before running any container upgrades.
