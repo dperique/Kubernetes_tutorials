@@ -1,5 +1,7 @@
 # Dealing with large pod images
 
+## Introduction
+
 One of the challenges of running Kubernetes is that once in a while
 your containers will need an upgrade and you need to roll out that
 upgrade in a graceful manner.  If your image is big or if your docker
@@ -22,7 +24,9 @@ set with an appropriate amount of time).
 Either way, problems with loading images can make rolling out upgrades
 in Kubernetes problematic.
 
-I suggest you separate out the image loading and the image upgrades.
+## Suggestions
+
+Separate out the image loading and the image upgrades.
 This way, your upgrades will be more predictable.
 
 One method is to manually (or via automation) go to each Kubernetes
@@ -47,4 +51,62 @@ image is already loaded on each of your Kubernetes nodes and so rolling out
 the new version will be a lot more predictable (e.g., faster and without
 having to deal with image load problems.
 
+## Example Scripting
+
+First label the Kubernetes nodes you want the image to load on.
+
+```
+for i in {1..10}; do
+  kubectl label nodes my-cluster-node-$i load-image=1
+done
+```
+
+Remove the label from Kubernetes nodes that you will never run your
+container on.  My 10th worker node is used for other workloads so
+I remove the label there.
+
+```
+kubectl label nodes my-cluster-node-10 load-image-
+```
+
+Run this script for the first time; the variable `MY_TAG` will be the image
+tag to use for subsequent upgrades.  But I start out with my initial rollout
+of `1.0.0`.
+
+```
+# Load images into the local docker images are before we do any
+# container upgrades.  We do this via a daemonset whose sole purpose
+# is to startup and then do nothing.
+# To load a new image, we update the version in the daemonset.
+
+# Set the default (initial image).
+#
+MY_TAG=${MY_TAG:-"1.0.0"}
+
+# Add the tag into the image part of the daemonset yaml and make
+# a new yaml to load.
+#
+cat scripts/load_image.yaml | sed "s/IMAGE/$MY_TAG/g" > /tmp/new_image.yaml
+
+# If you want to destroy the daemonset first, do this.  Destroying it will
+# allow a clean create when you re-create the daemonset.  All image loads
+# will happen at the same time.
+#
+theDS=$(kubectl get ds |grep load-image |awk '{print $1}')
+if [ $theDS == "load-image" ]; then
+  kubectl delete ds load-image
+fi
+
+# Apply the daemonset yaml and either see the daemonset pods for the
+# first time.
+# If the damonset already exists, this will update just the image and
+# the pods will load and rollout one at a time.
+#
+kubectl apply -f /tmp/new_image.yaml
+
+# Wait for the images to be loaded; this command will exit only
+# if all images have loaded.
+#
+kubectl rollout status ds/load-image
+```
 
