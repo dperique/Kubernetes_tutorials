@@ -1,21 +1,22 @@
-# Dealing with large pod images
+# Image preloading and Container upgardes
 
 ## Introduction
 
 One of the challenges of running Kubernetes is that once in a while
 your containers will need an upgrade and you need to roll out that
 upgrade in a graceful manner.  If your image is big or if your docker
-registry is busy, loading that image may not be so straightforward.
+registry is busy, loading new images may not be so straightforward.
 For example, the image could take a long to time load or the image
-load can fail (e.g., due to network connectivity issue).  During an
-upgrade cycle, you want to handle these conditions well.  Here are
+load can fail (e.g., due to network connectivity or authentication issues).
+During an upgrade cycle, you want to handle these conditions well.  Here are
 two scenarios:
 
 * Image does not load due to network connectivity
 * Image takes a long time to load and times out
 
 The first is something that needs to be addressed very soon as network
-connectivity loss can have other bad side effects.
+connectivity loss can have other bad side effects.  This can be due to
+things like default gateway down, DNS down, etc.
 
 The second may be mitigated by increasing the size of certain timeout
 parameters (i.e., the kubelet `--image-pull-progress-deadline` option
@@ -37,8 +38,8 @@ disturbing any upgrade cycle.
 
 Another method (my preferred method) is to use a daemonset to create a
 container that uses the upgraded image such that the container does nothing.
-The idea is to get Kubernetes to do an image load so that the image is
-populated in the docker images area but not do any other function.  As in
+The idea is to get Kubernetes to do an image load (so that the image is
+populated in the docker images area) but not do any other function.  As in
 the previous method, any issues can be addressed at this time.  If you have
 a large Kubernetes cluster and only want to run that container on certain
 nodes, you can use a node selector so that only those nodes get the daemonset
