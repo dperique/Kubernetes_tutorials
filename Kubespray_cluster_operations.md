@@ -269,3 +269,14 @@ calico_cni_version: "v1.11.4"
 calico_policy_version: "v1.0.3"
 calico_rr_version: "v0.4.2"
 ```
+
+## Upgrading components that won't apply in new versions of Kubernetes
+
+Example, we use xyz yaml feature and it's not applicable for Kubernetes 1.10.3 and below.
+Upgrade of Kubernetes will succeed but that's because the config is already there.
+After doing the Kubernetes upgrade, you should, one node at a time, remove xyz yaml usage
+(which may imply tearing down other things that depended on the xzy feature),
+apply the new compatible version of xzy yaml, and then build things on top of it.
+
+NOTE: once this is done, you will have to repeat the procedure when going down a
+version.
