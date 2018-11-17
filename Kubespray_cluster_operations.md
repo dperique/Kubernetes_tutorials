@@ -244,12 +244,7 @@ will just replace the node and use the same IP address.
 
 ## Upgrading a node
 
-You can always use the kubespray cluster-upgrade.yml playbook to upgrade all nodes in your
-Kubernetes cluster.  This playbook upgrades your Kubernetes cluster one master at a time and
-20% of the workers at a time and
-will drain/cordone nodes as it performs the upgrade.
-
-Keep these in mind when doing upgrades:
+### Keep these in mind when doing upgrades
 
 * Before running the cluster-upgrade.yml playbook, ensure that all nodes can be drained.  Draining
   may result in error for certain types of deployments.  For example, if the etcd-operator
@@ -266,7 +261,40 @@ Keep these in mind when doing upgrades:
   add a PersistentVolume
   in Kubernetes 1.9.2 and then upgraded to Kubernetes 1.10.4, x.yaml may not be compatible and
   a `kubectl apply -f x.yaml` may fail.  You will have to upgrade x.yaml so that you can run it again
-  on the new version.
+  on the new version.  On your staging environment, ensure that the upgraded yaml, when applied to
+  an already existing PersistentVolume is idempotent.  If you don't do this, and upgrade anyway,
+  you risk damaging a PersistentVolume that supports an important service.
+  * Once this is done, you will have to repeat the procedure when going down a version
+
+### Using kubespray cluster-upgrade.yml playbook
+
+You can always use the kubespray cluster-upgrade.yml playbook to upgrade all nodes in your
+Kubernetes cluster.  This playbook upgrades your Kubernetes cluster one master at a time and
+20% of the workers at a time and will drain/cordone nodes as it performs the upgrade.
+
+To upgrade using cluster-upgrade.yml, set the kubespray tag to the next release, study the new
+versions in the release notes, and then run the cluster-upgrade.yml playbook.
+
+But keep in mind that cluster-upgrade.yml, as written, pays no attention to anything specific
+to your Kubernetes cluster.  It will download and upgrade blindly with no regard for your
+Kubernetes workloads.  In many cases this is ok.  But there are cases where it is not.  Here
+are a few:
+
+* If docker is restarted, pods most like will restart.  This is usually ok especially when
+  pods are inside a deployment or replication controller.  But if the pod does not handle
+  restarts well, this will be problematic.  Two examples are:
+  * mysql pods in a Galera cluster.  If you restart a mysql pod, it will start, see data
+    and abort to avoid any possible data corruption
+    [Know Limitation bullet 3](https://github.com/severalnines/galera-docker-mariadb#known-limitations)
+  * etcd nodes that are part of an etcd cluster that uses only pod local storage.  If you
+    restart an etcd node, it will not join the cluster because it is essentially a new member.
+* The kube-controller, kube-scheduler, and kube-apiserver will be restarted and comes with
+  their own implications.  For example, kube-apiserver downtime (I found to be about 44 seconds in my
+  environments) results in kubectl not working.
+  * Note that since one master at a time gets upgrade, you can always point kubectl to a different
+    master and still use kubectl.
+
+### Upgrade procedure for one node at a time
 
 I personally would rather upgrade one node at a time and see how it goes before proceeding to the
 next node.  This allows me better control to ensure that my Kubernetes cluster continues to
@@ -279,7 +307,7 @@ To upgrade one node at a time, I do this:
 * Ensure the node to be upraded keeps the same IP address
 * Do one of these:
   * wipe that node clean with a fresh OS install; this can include other patches and other upgrades
-  * keep the node intact with currently running versions
+  * keep the node intact with currently running versions (i.e., don't wipe anything)
 * follow the same procedures above for replacing nodes except
   when you run the cluster.yml playbook, do one of these:
   * set the git tag on the kubespray repo to the next higher
@@ -288,6 +316,8 @@ To upgrade one node at a time, I do this:
 * run the cluster.yml playbook with the `--limit x` option where x is the name of the node
   to be upgraded.
 * After successful run go through and check the versions were upgraded.
+
+### Sample set of versions that worked for me
 
 Here is a set of variables and versions known to work for me on kubespray release v2.4.0; my purpose
 was to stick with the versions on kubespray v2.4.0 but upgrade a few things.  I was able to wipe
@@ -314,14 +344,3 @@ calico_cni_version: "v1.11.4"
 calico_policy_version: "v1.0.3"
 calico_rr_version: "v0.4.2"
 ```
-
-## Upgrading components that won't apply in new versions of Kubernetes
-
-Example, we use xyz yaml feature and it's not applicable for Kubernetes 1.10.3 and below.
-Upgrade of Kubernetes will succeed but that's because the config is already there.
-After doing the Kubernetes upgrade, you should, one node at a time, remove xyz yaml usage
-(which may imply tearing down other things that depended on the xzy feature),
-apply the new compatible version of xzy yaml, and then build things on top of it.
-
-NOTE: once this is done, you will have to repeat the procedure when going down a
-version.
