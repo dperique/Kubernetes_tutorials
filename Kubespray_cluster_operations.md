@@ -249,38 +249,49 @@ Kubernetes cluster.  This playbook upgrades your Kubernetes cluster one master a
 20% of the workers at a time and
 will drain/cordone nodes as it performs the upgrade.
 
-Before running the cluster-upgrade.yml playbook, ensure that all nodes can be drained.  Draining
-may result in error for certain types of deployments.  For example, if the etcd-operator
-deployment resides on a node, the `kubectl drain` command fails.
+Keep these in mind when doing upgrades:
 
-NOTE: Before installing anything on your
-Kubernetes nodes, it is imporant to understand the implications when it comes time to upgrade
-Kubernetes using your preferred method.  For example, if etcd-operator will cause problems with
-draining, ensure you uninstall it first before performing an upgrade or the cluster-upgrade.yml
-playbook will fail.
+* Before running the cluster-upgrade.yml playbook, ensure that all nodes can be drained.  Draining
+  may result in error for certain types of deployments.  For example, if the etcd-operator
+  deployment resides on a node, the `kubectl drain` command fails.
+
+* Before installing anything on your
+  Kubernetes nodes, understand the implications when it comes time to upgrade
+  Kubernetes using your preferred method.  For example, if etcd-operator will cause problems with
+  draining, ensure you uninstall it first before performing an upgrade or the cluster-upgrade.yml
+  playbook will fail.
+
+* Resolve the yaml incompatibilities first using a staging environment.  Realize that upgrading may
+  result in yaml incompatibilities.  For example, if you used x.yaml to
+  add a PersistentVolume
+  in Kubernetes 1.9.2 and then upgraded to Kubernetes 1.10.4, x.yaml may not be compatible and
+  a `kubectl apply -f x.yaml` may fail.  You will have to upgrade x.yaml so that you can run it again
+  on the new version.
 
 I personally would rather upgrade one node at a time and see how it goes before proceeding to the
 next node.  This allows me better control to ensure that my Kubernetes cluster continues to
 provide service in a non-disruptive way (i.e., no downtime).
 
-* Run the cluster.yml playbook with no changes to generate the ansible cache.
 To upgrade one node at a time, I do this:
 
 * drain/cordone the node to be updated
 * `kubectl delete node ...` the node
-* wipe that node clean with a fresh OS install and using the same IP address
+* Ensure the node to be upraded keeps the same IP address
+* Do one of these:
+  * wipe that node clean with a fresh OS install; this can include other patches and other upgrades
+  * keep the node intact with currently running versions
 * follow the same procedures above for replacing nodes except
-  when you run the cluster.yml playbook, first set the git tag on the kubespray repo to the next higher
-  tag which uses the next set of versions of software you want to use.
-  Realize that upgrading this way will upgrade the versions but can be unsafe because there may be yaml
-  incompatibilities.  Resolve the yaml incompatibilities first using a staging environment.
-  * if you have no ansible cache, run cluster.yml once with no inventory changes and with
-    the kubespray tag that was used to build that node; this should result in no changes.
-  * run the cluster.yml playbook with the `--limit x` option where x is the name of the node
-    to be upgraded.
-  * Here is a set of variables and versions known to work for me on kubespray release v2.4.0; my purpose
-    was to stick with the versions on kubespray v2.4.0 but upgrade a few things.  I was able to wipe
-    my machines and run kubespray with these variables to get to these versions:
+  when you run the cluster.yml playbook, do one of these:
+  * set the git tag on the kubespray repo to the next higher
+    tag which uses the next set of versions of software you want to use.
+  * set kubespray variables to the versions you want to upgrade to
+* run the cluster.yml playbook with the `--limit x` option where x is the name of the node
+  to be upgraded.
+* After successful run go through and check the versions were upgraded.
+
+Here is a set of variables and versions known to work for me on kubespray release v2.4.0; my purpose
+was to stick with the versions on kubespray v2.4.0 but upgrade a few things.  I was able to wipe
+my machines and run kubespray with these variables to get to these versions:
 
 ```
 helm_enabled: true
