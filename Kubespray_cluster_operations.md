@@ -20,23 +20,46 @@ replace or increase the number of Kubernetes nodes for various reasons:
 ## Using kubespray release tags
 
 We use kubespray by using a particular tag in the repo.  Certain tags equate to particular
-Kubernetes versions as well as versions for the various components (e.g., calico, etcd, etc.).
+Kubernetes versions as well as versions for the various components (e.g., calico, etcd, kubedns, etc.).
+
+## Setting up and/or saving ansible cache
+
+Ansible cache is needed when you run ansible with `--limit option`.  This option is useful when
+you want to limit operations to a single node and not disturb the others especially in a production
+enviroment.
+
+You can generate the ansible
+cache just by running a playbook (e.g., cluster.yml) with no changes.  Kubespray puts the ansible
+cache in /tmp (see `fact_caching_connection = /tmp` in ansible.cfg).
+
+IMPORTANT: Understand that the `/etc/kubernetes/manifest` files on each Kubernetes node files are regenerated
+(but should be the same)
+      and the kube-controller, kube-scheduler, and kube-apiserver are restarted (resulting in about 44
+      seconds of kube-apiserver downtime in my case).  However, workloads and the service they provide should
+      remain intact and running.
+
+It's a good idea to save your ansible cache in case you need to use the `-limit` option.
+This will ensure you do not have to run kubespray when you don't need to.
+Also, if one of your nodes is dead (e.g., not responding), you may not be able to generate the ansible cache.
+
+I have yet to explore this idea but will soon.
 
 ## Recommendation: Save your certificates
 
 I recommend saving the certificates from your Kubernetes nodes immeidately after it
 goes into operation so that when you bootstrap
 a replacement node, you put those certificates on the fresh machine before running
-kubespray -- this will avoid any tls authentication issues.
+kubespray -- this will avoid any tls authentication issues (especially in the etcd
+cluster used for Kubernetes bookkeeping).
 
 I understand that kubespray may contain some tooling so that you really don't have
 to save certificates but that is another area of research I have not gone through.
 
 Here's roughly how I did it for my 6 node cluster and how I restored the certificates for
-node 4:
+node 4 (where junk.rsa is the ssh key used to login to each host):
 
 ```
-## Copy the certificates and restore them.
+## Copy the certificates from my 6 hosts.
 
 for i in 1 2 3 4 5 6 ; do
   mkdir -p kube/node$i
@@ -52,7 +75,9 @@ for i in 236.111 236.206 236.229 236.133 236.220 237.34; do
   j=$((j+1))
 done
 
-ssh node4
+# Restore certificates onto node4.
+#
+ssh -i junk.rsa node4
 mkdir -p /etc/kubernetes/ssl/
 mkdir -p /etc/ssl/etcd/ssl/
 mkdir -p /usr/local/share/ca-certificates/
@@ -116,7 +141,7 @@ to replace it:
     tweak your ~/.kube/config to reference another working master
 * get a new machine with same IP address
 * restore the certificates from your backup
-* remove ansible cache
+* remove ansible cache (kubespray puts ansible cache in /tmp)
   * rm /tmp/xx (where xx is any node name)
 * run kubespray/cluster.yml with your original inventory
   * this will abort either by etcd not up or calico not up (probably due to etcd not up), etc.
@@ -136,20 +161,24 @@ do this on the new etcd node (example shows my etcd node 3):
 * `systemctl enable etcd`
 * `systemctl start etcd`
 
-NOTE: For debugging, if your `/etc/etcd.env` file is already created, you can just run `/usr/local/bin/etcd`
-and watch the output on the command line.
+NOTE: If your `/etc/etcd.env` file is already created, you can just run `/usr/local/bin/etcd`
+on the command line as it will use the parameters specified in `/etc/etcd.env`.  Running this way, you can
+watch the output on the screen.  This is helpful for debugging so you can watch for errors and deal with them
+as you see them.
 
 Check the etcd cluster health using the etcdctl command as described in the next section.  You should
 see all members as healthy.  If not, repeat the above steps and possibly run etcd on the command
 line to help debug.  Once done debugging, get etcd to run via the service.
 
 Once the etcd cluster is fully functional, rerun kubespray/cluster.yml wth `--limit x` where x is the name
-of the new node.  At this point, we only need to run the cluster.yml playbook on that one node so
-that it can finish with the kubspray tasks that would've run if kubespray didn't abort.
+of the new node since we only need to run the cluster.yml playbook on that one node so
+that it can finish with the kubspray tasks that would've run had it not aborted.  If etcd is fully
+up, then kubespray should get past the part where it aborted earlier.
 
 The output of `kubectl get node` should show all nodes (including the new one).
 
 NOTE: `kubectl get node` may show all nodes present but the etcd cluster may still only have two members.
+Check etcd status via `kubectl get componentstatuses`.
 
 ### Running the etcdctl command
 
@@ -183,7 +212,8 @@ docker exec -ti etcd${num} etcdctl \
                     --endpoints https://127.0.0.1:2379 cluster-health
 ```
 
-The first method runs etcdctl on the Kubernetes node.  The second method runs etcdctl on the container.
+Run either of the commands above as root on one of your Kubernetes nodes that is running etcd.
+The first method runs etcdctl on the Kubernetes node.  The second method runs etcdctl on the etcd container.
 Both use the same etcd cluster.
 
 ## Adding a new worker node
@@ -207,13 +237,16 @@ Do this if one of your existing worker nodes dies.  You will keep the same inven
 will just replace the node and use the same IP address.
 
 * `kubectl delete node ...`
+* Restore the certificates onto this new node using the above sample scripting; this will
+  ensure that you avoid any tls errors when etcd starts up.
 * run kubespray/cluster.yml `--limit x`
   * see note above about running with `limit x` in the "Add a new worker node section"
 
 ## Upgrading a node
 
 You can always use the kubespray cluster-upgrade.yml playbook to upgrade all nodes in your
-Kubernetes cluster.  This playbook upgrades your Kubernetes cluster one node at a time; it
+Kubernetes cluster.  This playbook upgrades your Kubernetes cluster one master at a time and
+20% of the workers at a time and
 will drain/cordone nodes as it performs the upgrade.
 
 Before running the cluster-upgrade.yml playbook, ensure that all nodes can be drained.  Draining
@@ -230,6 +263,7 @@ I personally would rather upgrade one node at a time and see how it goes before 
 next node.  This allows me better control to ensure that my Kubernetes cluster continues to
 provide service in a non-disruptive way (i.e., no downtime).
 
+* Run the cluster.yml playbook with no changes to generate the ansible cache.
 To upgrade one node at a time, I do this:
 
 * drain/cordone the node to be updated
