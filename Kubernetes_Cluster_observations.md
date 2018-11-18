@@ -31,7 +31,7 @@ This all obvious.  But what's not quite obvious is the following:
 
 ## Galera scanario and wrong use of Kubernetes deployments
 
-We have a three node Galera cluster using
+Let's say we have a three node Galera cluster using
 [Severalnines](https://github.com/severalnines/galera-docker-mariadb) setup with three mysql pods
 managed by their own deployment.  This means that if a mysql pod dies, the deployments will
 retart them.  We have noticed that due to
@@ -39,7 +39,13 @@ retart them.  We have noticed that due to
 one of those mysql pods goes down, recovery is not possible.  Specifically, if the deployment
 restarts the mysql pod, that pod will refuse to restart (to avoid the possibility of data loss).
 
-In this case, using a Kubernetes deployments is pointless.
+In this case, using a Kubernetes deployments is pointless.  Here are a few reasons:
+
+* If restarting the mysql pod is not supported (see Known limitations above mentioning possible
+  dataloss), then don't restart it and avoid restarting it.
+* If kubelet dies, your mysql pod remains intact and running (i.e, no impact to the Galera
+  cluster).  But eventually the deployment logic will restart the pod which is not supported and causes that
+  pod to be down.  In a three mysql Galera cluster, you will end up with a two mysql Galeray cluster.
 
 
 
