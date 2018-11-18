@@ -47,6 +47,27 @@ In this case, using a Kubernetes deployments is pointless.  Here are a few reaso
   cluster).  But eventually the deployment logic will restart the pod which is not supported and causes that
   pod to be down.  In a three mysql Galera cluster, you will end up with a two mysql Galeray cluster.
 
+## If kubelet is dead for too long, your pods will restart when revived
+
+In my environment I ran this scenario:
+
+* stop kubelet on a particular Kubernetes node
+* notice my pods are still running on that Kubernetes node
+  * Ran docker exec on the pods to ensure it's true
+* wait several minutes (maybe 10 or more)
+* start kubelet
+
+Kubelet started up fine but in starting, I noticed Calico showed these logs:
+
+* `Releasing all IPs with handle 'default.xx'` where xx was the name o fa pod running on that Kubernetes node.
+* `Calico CNI releasing IP address`
+
+I also saw k8s.go going into teardown mode.
+
+As a result, my workloads on that Kubernetes node were all destroy (and restarted if they were in deployments).
+I don't know the time for this to happen and but it is certainly greater than several seconds.
+
+
 ## Ideas for checking the status of your workloads
 
 It's a good idea to run periodic checks to confirm your workloads are functioning properly.
