@@ -62,7 +62,7 @@ suggestions in light of the above observations:
       Kubernetes masters onto a working one using health checks to determine which one to use.
 
 * If you run `kubectl exec` to check the state of pods, it will fail if kubelet is down.  In this case,
-  run `docker exec` on the docker containers that map to your Kubernetes pods.
+  run `docker exec` (from the Kubernetes node) on the docker containers that map to your Kubernetes pods.
   * This can help you determine if service is impacted (critical severity) or if just Kubernetes is degraded
     but still operational (medium severity).
   * Assuming the kubelet config files are intact, a lot of times, you can mitigate a kubelet problem via
