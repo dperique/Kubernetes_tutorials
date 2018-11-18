@@ -47,6 +47,21 @@ In this case, using a Kubernetes deployments is pointless.  Here are a few reaso
   cluster).  But eventually the deployment logic will restart the pod which is not supported and causes that
   pod to be down.  In a three mysql Galera cluster, you will end up with a two mysql Galeray cluster.
 
+## Ideas for checking the status of your workloads
 
+It's a good idea to run periodic checks to confirm your workloads are functioning properly.
 
+Sometimes we use `kubectl exec` to run various commands to check state of pods.  Here are a few
+suggestions in light of the above observations:
 
+* Make it so that the kubectl command is configured with the IP address of a working Kubernetes master
+  * This can be done by:
+    * checking the Kubernetes masters before each periodic status check and configuring kubectl point
+      use the first working one.
+    * configuring kubectl to use a VIP (using something like keepalived) that "floats" among the
+      Kubernetes masters onto a working one using health checks to determine which one to use.
+* Run `docker exec` on the docker containers that map to your Kubernetes pods to check the
+  status of your workloads.
+  * This can help you determine if service is impacted (critical severity) or if just Kubernetes is degraded
+    but still operational (medium severity).
+  * This is necessary only if you don't have a working kube-apiserver on one of the masters.
