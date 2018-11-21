@@ -344,3 +344,43 @@ calico_cni_version: "v1.11.4"
 calico_policy_version: "v1.0.3"
 calico_rr_version: "v0.4.2"
 ```
+
+## Accessing the dashboard
+
+We have found that the dashboard takes a bit of resource so we disable it by default especially
+in minikube deployments we use in CI testing.  However, the dashboard is nice for demos. Here's
+how I get to the dashboard.
+
+* Turn on the dashboard using the `dashboard_enabled: true` variable in kubespray.
+  * Look at [Dashboard repo](https://github.com/kubernetes/dashboard) for the actual source including
+    releases
+  * Optionally tweak the version of dashboard you want using `dashboard_image_tag` in kubespray
+    `kubespray/roles/kubernetes-apps/ansible/defaults/main.yml`; I'm using v1.10.0 (latest as of
+    this writing)
+* Run `kubectl proxy` to expose the ports to your local machine on `localhost`.
+* Navigate to: [Kubernetes dashboard](http://localhost:8001/api/v1/namespaces/kube-system/services/https:kubernetes-dashboard:/proxy/#!/login)
+  using your local browser.
+  * It will give 2 choices -- pick the one for supplying the token.
+* Read this for more information: [giantswarm reference](https://docs.giantswarm.io/guides/install-kubernetes-dashboard/) but
+  the TL;DR of getting the token is here:
+
+```
+# Create a service account for dashboard
+#
+$ kubectl create serviceaccount cluster-admin-dashboard-sa
+
+# Create a clusterrolebinding for dashboard and give it admin rights
+#
+$ kubectl create clusterrolebinding cluster-admin-dashboard-sa \
+  --clusterrole=cluster-admin \
+  --serviceaccount=default:cluster-admin-dashboard-sa
+
+# Determine the secret that was generated.
+#
+$ kubectl get secret | grep cluster-admin-dashboard-sa
+cluster-admin-dashboard-sa-token-...   kubernetes.io/service-account-token  ...
+
+# Get the secret that shows following `token: ` in the output
+#
+$ kubectl describe secret cluster-admin-dashboard-sa-token-6xm8l
+```
