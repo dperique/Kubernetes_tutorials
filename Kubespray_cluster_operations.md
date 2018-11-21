@@ -357,7 +357,7 @@ how I get to the dashboard.
   * Optionally tweak the version of dashboard you want using `dashboard_image_tag` in kubespray
     `kubespray/roles/kubernetes-apps/ansible/defaults/main.yml`; I'm using v1.10.0 (latest as of
     this writing)
-* Run `kubectl proxy` to expose the ports to your local machine on `localhost`.
+* Run `kubectl proxy --port=8001` to expose the ports to your local machine on `localhost`.
 * Navigate to: [Kubernetes dashboard](http://localhost:8001/api/v1/namespaces/kube-system/services/https:kubernetes-dashboard:/proxy/#!/login)
   using your local browser.
   * It will give 2 choices -- pick the one for supplying the token.
