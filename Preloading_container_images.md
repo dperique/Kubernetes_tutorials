@@ -166,6 +166,11 @@ There are two ways to run the script:
   run a rolling upgrade to the daemonset.  That is, the image will be pulled for
   each pod in the daemonset one at a time.  This will be slower (due to the fact
   that it is serial in nature); but the load on the docker registry will be lower.
+* You can leave the daemonset on your k8s cluster and upgrade the image using the
+  `kubectl set image` command and a new image version:
+```
+kubectl set image ds/load-image do-nothing=my.docker.registry/project/dennis-project:xx.x
+```
 
 After the script is successfully run and all pods in the daemonset are in Running
 state, proceed with your container upgrade procedures.
