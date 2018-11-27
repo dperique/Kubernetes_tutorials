@@ -172,7 +172,7 @@ line to help debug.  Once done debugging, get etcd to run via the service.
 
 Once the etcd cluster is fully functional, rerun kubespray/cluster.yml wth `--limit x` where x is the name
 of the new node since we only need to run the cluster.yml playbook on that one node so
-that it can finish with the kubspray tasks that would've run had it not aborted.  If etcd is fully
+that it can finish with the kubespray tasks that would've run had it not aborted.  If etcd is fully
 up, then kubespray should get past the part where it aborted earlier.
 
 The output of `kubectl get node` should show all nodes (including the new one).
