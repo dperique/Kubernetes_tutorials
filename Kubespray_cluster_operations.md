@@ -22,6 +22,22 @@ replace or increase the number of Kubernetes nodes for various reasons:
 We use kubespray by using a particular tag in the repo.  Certain tags equate to particular
 Kubernetes versions as well as versions for the various components (e.g., calico, etcd, kubedns, etc.).
 
+We have started tweaking variables for Kubernetes versions so that we can upgrade Kubernetes
+without upgrading other components. For example in kubespray v2.4.0, we used:
+
+```
+# Bump to later Kubernetes.
+kube_version: v1.10.11
+
+# Required for kubespray v2.4.0 and kube_version: v1.10.6+
+hyperkube_image_repo: "gcr.io/google-containers/hyperkube"
+hyperkube_image_tag: v1.10.11
+```
+
+It has worked well except we noticed that the `conntrack` package is missing and should be installed.
+I believe this is added as a dependency in the latest version of kubespray.  The conclusion is to
+be cautious when you deviate from the package version in kubespray releases.
+
 ## Setting up and/or saving ansible cache
 
 Ansible cache is needed when you run ansible with `--limit option`.  This option is useful when
@@ -384,3 +400,33 @@ cluster-admin-dashboard-sa-token-...   kubernetes.io/service-account-token  ...
 #
 $ kubectl describe secret cluster-admin-dashboard-sa-token-6xm8l
 ```
+
+## Miscellaneous tips
+
+Here are a few tips I use when tweaking things on Kubernetes clusters to help quickly mitigate
+problems including outages.
+
+### How to tweak apply Kubernetes deployments
+
+There are two ways to do this:
+
+* Modify the yaml file used to originally deploy your pods.  Do `kubectl apply -f ...` for that yaml.
+  Most but not all changes will get applied.  If there are no changes, nothing will result.  If there
+  are changes that are not allowed to apply, you will have to `kubectl delete deployments ...` and
+  change, make changes, and then do `kubectl apply -f ...`.
+* Modify the deployment directly.  In this method, we do this:
+  * cordon the node where the deployment's pod resides
+  * delete the pod (the pod will go to Pending state)
+  * `kubectl edit deployment ...` on the deployment
+  * modify what you want in the deployment and save
+  * delete the currently Pending pod
+  * uncordon the node
+
+  The new pod will be created with the new deployment settings.  But if the deployment is deleted, you
+  will have to repeat this.  If you used this method, then update the original yaml to reflect your
+  changes so that subsequent `kubectl apply -f ` commands will have your changes.
+
+  It is very imporant that you "stage" this somewhere other than a critical Kubernetes cluster because
+  there are cases where this does not have the exact behavior you would expect.  For example, if you
+  change the liveliness or readiness probe timers, it will result in two different pods when the
+  deployment calls for one.
