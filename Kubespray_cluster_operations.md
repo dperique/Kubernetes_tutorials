@@ -406,7 +406,7 @@ $ kubectl describe secret cluster-admin-dashboard-sa-token-6xm8l
 Here are a few tips I use when tweaking things on Kubernetes clusters to help quickly mitigate
 problems including outages.
 
-### How to tweak apply Kubernetes deployments
+### How to modify and apply Kubernetes deployments
 
 There are two ways to do this:
 
