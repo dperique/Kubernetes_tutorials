@@ -7,12 +7,11 @@ This doc lists a few techniques I used when creating my own images using disk im
 Think of this an "injecting" files into an image -- e.g., ssh keys, and other scripts that might
 be useful to the user of the resultant image.
 
-See the [Phase Subdirectories] doc for information on each element directory mentioned below.
-[Phase Subdirectories]: https://media.readthedocs.org/pdf/diskimage-builder/latest/diskimage-builder.pdf
+See the [Phase Subdirectories](https://media.readthedocs.org/pdf/diskimage-builder/latest/diskimage-builder.pdf)
+doc for information on each element directory mentioned below.
 
-* Put the files you want to inject into some subdirectory on the local host running disk-image-create.
-  This can be done via manual operation or via some ansible role that creates a nodepool machine 
-  (as done in BonnyCI)
+* Put the files you want to inject into some subdirectory on the local host running `disk-image-create`.
+  This can be done via manual operation or via some ansible role that creates a nodepool machine.
 * write an element that uses these directories:
  - `exta-data.d`: In this directory, create a script that will copy the files from the local host to the $TMP_HOOKS_PATH
  - `install.d`: In this directory, create a script that will:
