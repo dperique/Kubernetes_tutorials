@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# I just noticed how old this script is.  Consider it a bash/kubectl demo.
+# This functionality can be easily achieved using the kubectl rollout status
+# command.
+
 if [ "$1" == "" ] || [ "$2" == "" ]; then  
   echo ""
   echo "Usage kdeploy_check.sh <aDeploymentYaml> <aDeploymentName>"
