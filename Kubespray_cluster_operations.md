@@ -38,6 +38,10 @@ It has worked well except we noticed that the `conntrack` package is missing and
 I believe this is added as a dependency in the latest version of kubespray.  The conclusion is to
 be cautious when you deviate from the package version in kubespray releases.
 
+NOTE: in our case, we have stuck with kubespray v2.4.0 and enhanced it to include some tasks for
+installing conntrack.  Any required version changes are done via using the ansible variables and
+then running kubespray/cluster.yml to apply them.
+
 ## Setting up and/or saving ansible cache
 
 Ansible cache is needed when you run ansible with `--limit option`.  This option is useful when
@@ -48,17 +52,14 @@ You can generate the ansible
 cache just by running a playbook (e.g., cluster.yml) with no changes.  Kubespray puts the ansible
 cache in /tmp (see `fact_caching_connection = /tmp` in ansible.cfg).
 
-IMPORTANT: Understand that the `/etc/kubernetes/manifest` files on each Kubernetes node files are regenerated
-(but should be the same)
-      and the kube-controller, kube-scheduler, and kube-apiserver are restarted (resulting in about 44
-      seconds of kube-apiserver downtime in my case).  However, workloads and the service they provide should
-      remain intact and running.
-
 It's a good idea to save your ansible cache in case you need to use the `-limit` option.
 This will ensure you do not have to run kubespray when you don't need to.
 Also, if one of your nodes is dead (e.g., not responding), you may not be able to generate the ansible cache.
 
-I have yet to explore this idea but will soon.
+IMPORTANT: Understand that the `/etc/kubernetes/manifest` files on each Kubernetes node files are regenerated
+(but should be the same) and for master k8s nodes, the kube-controller, kube-scheduler, and kube-apiserver
+are restarted (resulting in about 44 seconds of kube-apiserver downtime in my case).  However, workloads
+and the service they provide should remain intact and running.
 
 ## Recommendation: Save your certificates
 
@@ -108,12 +109,16 @@ pushd share/node4
 scp -i ../../junk.rsa * root@192.168.236.133:/usr/local/share/ca-certificates
 ```
 
+NOTE: Master node-1 in your kubespray inventory is "special" in that it holds the certificates
+for all nodes.  If you have only the certificates of node-1, you will have al of the
+certificates.
+
 ## Recommendation: backup your etcd database
 
-Instructions on how to backup your etcd database are at: [etcd admin guide](https://coreos.com/etcd/docs/latest/v2/admin_guide.html)
+Instructions on how to backup your etcd database are at:
+  [etcd admin guide](https://coreos.com/etcd/docs/latest/v2/admin_guide.html)
 
 More on this later.
-
 
 ## Replacing a Kubernetes etcd node
 
@@ -121,14 +126,13 @@ NOTE: We have been setting our kubespray inventory to use three masters and thre
 nodes where the three masters are also etcd nodes.  Thus, replacing an etcd node equates
 to also replacing a master node.
 
-This link [Operating etcd clusters for Kubernetes](https://kubernetes.io/docs/tasks/administer-cluster/configure-upgrade-etcd/)
-recommends having 5 etcd nodes in production.  Going forward, we intend to follow this
-recommendation.
+We use five etcd nodes for production as recommended by this link
+[Operating etcd clusters for Kubernetes](https://kubernetes.io/docs/tasks/administer-cluster/configure-upgrade-etcd/)
 
 When we create Kubernetes clusters using kubespray, we set the inventory
-to include three etcd nodes (in the `[etcd]` inventory group).
+to include five etcd nodes (in the `[etcd]` inventory group).
 
-If one of them dies, we would like to replace it very soon because we know that
+If up to three of them dies, we would plan to get bring them up soon because we know that
 if another one dies, the etcd cluster will collapse.  The Kubernetes documentation
 for etcd (see the link above) puts it like this:
 
@@ -139,6 +143,9 @@ current state. Although the scheduled pods might continue to run, no new pods
 can be scheduled. In such cases, recover the etcd cluster and potentially
 reconfigure Kubernetes API server to fix the issue.
 ```
+
+In reality, if one etcd node dies, we would fix it then rather than waiting for
+three of them to die.
 
 NOTE: If your etcd cluster is down, `kubectl` will not work.
 
@@ -238,14 +245,57 @@ In this case, you want to just add one more node to your Kubernetes cluster.  Th
 be a pure "worker" node (i.e., it will not be a master or etcd node).  You can add the
 new node using the cluster.yml or scale.yml playbooks.  I use cluster.yml in my instructions.
 
-* add your new worker node into your inventory under the `[kube-node]` group
-* run kubespray/cluster.yml `--limit x` where x is the new node.
-  * Ensure you run with `--limit x` only after running it without `--limit x` because kubespray will
-    abort due to undefined variables like this: `FAILED! => {"msg": "The field 'environment' has an
-    invalid value, which includes an undefined variable.`
-  * Running kubespray/cluster.yml on a working cluster that was built by kubespray should cause no harm.
+I ran these instructions successfully only after finding out that kubespray v2.4.0 didn't
+do the job fully.
 
-Run `kubectl get node` and you will see the new node.
+* Generate certificates for your new k8s node.  Login to node-1 and do this:
+  * `sudo su`
+  * `vi /etc/hosts`, add the new k8s node name and IP to the list of k8s nodes already there, save the file
+  * `export HOSTS=(theNewK8sNodeName)`
+  * `cd /usr/local/bin/kubernetes-scripts`
+  * bash -x ./make-ssl.sh -f /etc/kubernetes/openssl.conf -d /etc/kubernetes/ssl
+
+* Modify the ansible inventory file and add the new node into the appropriate ansible
+  hosts group
+* Run kubespray (do NOT use `--limit`)
+
+### Test and Troubleshoot
+
+* Ensure that you can do this on the newly added node (these confirm a Pod can successfully
+  run and that DNS is working):
+  * Run a Pod that produces logs on the new node and ensure it runs as expected
+  * Ensure `kubectl logs ...` works to retrieve logs
+  * Ensure `kubectl exec -ti ... -- sh` works to shell into the Pod
+* Troubleshooting:
+  * Ensure that, in the kube-system namespace, that the newly added node's hostname
+    appears in `/etc/hosts` file local to the pod; you can determine this by shell'ing into
+    these pods and running `cat /etc/hosts`:
+    * kube-apiserver
+      * If the node is not there, on the k8s node hosting the kube-apiserver pod, do `docker ps -af name=k8s_kube-apiserver* -q | xargs --no-run-if-empty docker rm -f`
+    * kube-controller
+      * If the node is not there, on the k8s node hosting the kube-controller pod, do `docker ps -af name=k8s_kube-controller-manager* -q | xargs --no-run-if-empty docker rm -f`
+    * kube-scheduler
+      * If the node is not there, on the k8s node hosting the kube-scheduler pod, do `docker ps -af name=k8s_kube-scheduler* -q | xargs --no-run-if-empty docker rm -f`
+    * How to shell into a pod: `kubectl exec -ti (podName) -- sh`
+    * Running the above docker commands destroys the docker container running each of those services;
+      the containers will restart (effectively "refreshing" its view of the k8s cluster which now includes the
+      new node) and as a result, the `/etc/hosts` will get populated with the new node
+
+  * Confirm that `kubectl get node` shows that the node is truly added.  If it does not
+    you may have to restart kubelet.  Do this by stopping, waiting several seconds, and then
+    starting kubelet.  Confirm that kubelet was actually stopped before starting it.  Also
+    check the logs to ensure it's running ok and encountered no errors.  Here are some
+    sample commands:
+
+    * `service kubelet stop`
+    * `service kubelet status`
+    * `service kubelet start`
+    * `journalctl -fu kubelet`
+
+  * In any case, ensure that the node has joined the k8s cluster.  If it has not, do some
+    debugging and get it to join.  This is where some knowledge of Kubernetes helps because
+    there are many reasons a node won't join the cluster.
+
 
 ## Replacing a worker node
 
