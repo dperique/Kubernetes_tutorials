@@ -27,7 +27,7 @@ kubectl get deployments dperique-grpc-demo --output=jsonpath={.status.availableR
 Using the above, you can write a script to create a deployment and check on the deployment
 to see if the available replicas match what is requested.
 
-Such a script is available [here](https://github.com/dperique/Kubernetes_tutorials/blob/master/kdeploy_check.sh)
+Such a script is available [here](https://github.com/dperique/Kubernetes_tutorials/blob/master/beginners/bash/kdeploy_check.sh)
 
 You can run it like this:
 ```
@@ -51,8 +51,4 @@ All replicas not present after 5 iterations
 
 currently Available = '5' out of '5'
 All replicas came up
-
 ```
-
-
-
