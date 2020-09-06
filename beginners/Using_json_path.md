@@ -1,10 +1,10 @@
 # Using kubectl output in scripts
 
 ## Introduction
-The ``kubectl`` command supports json output.  This is handy because we can then use it
+The `kubectl` command supports json output.  This is handy because we can then use it
 to get information about a construct (e.g., deployment) in a script.  I'm betting there
 are python scripts that do this using some API (will look into that later).  But for now,
-here are some examples using the actual ``kubectl`` command and bash.
+here are some examples using the actual `kubectl` command and bash.
 
 You can do this to get the json output of a deployment.
 
@@ -27,8 +27,7 @@ kubectl get deployments dperique-grpc-demo --output=jsonpath={.status.availableR
 Using the above, you can write a script to create a deployment and check on the deployment
 to see if the available replicas match what is requested.
 
-Such a script is available [here].
-[here]: https://github.com/dperique/Kubernetes_tutorials/blob/master/kdeploy_check.sh
+Such a script is available [here](https://github.com/dperique/Kubernetes_tutorials/blob/master/kdeploy_check.sh)
 
 You can run it like this:
 ```
