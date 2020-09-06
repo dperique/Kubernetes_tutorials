@@ -9,7 +9,7 @@ Let's say I have minikube on my Mac.  I want to be able to control that minikube
 cluster from a Ubuntu VM (for whatever reason) -- and not in the usual way by
 running kubectl on my Mac where minikube is running.
 
-Here's how I did it:
+## Method one: tar/copy .kube files
 
 Get minikube installed on your Mac, or wherever — using vbox or VMware (maybe you already have this).
 Ensure that ‘kubectl get nodes’ works.
@@ -100,3 +100,25 @@ BODY:
 -no body in request-
 dperiquet@spooner2:~$
 ```
+
+## Method 2: generate a flattened kube config
+
+minikube is still a plain Kubernetes cluster.  As such, you can obtain the "flattened" kube config,
+copy it to another machine and then configure kubectl to use it.
+
+For example, on the machine where you have minikube installed, do this:
+
+```
+kubectl config use-context minikube
+kubectl config view --minify --flatten > /tmp/minikube-flattened.config
+```
+
+Then copy `/tmp/minikube-flattened.config` to your remote machine.
+
+Then on the remote machine:
+
+```
+export KUBECONFIG=minikube-flattened.config
+```
+
+At this point, kubectl will now interact with your minikube cluster.
