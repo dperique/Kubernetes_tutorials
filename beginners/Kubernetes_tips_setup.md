@@ -88,4 +88,3 @@ If you want to get rid of that secret, you can just do:
 ```
 $ kubectl delete secret myregsecret
 ```
-

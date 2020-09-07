@@ -15,7 +15,7 @@ NOTE: the grpc demo scripts are used only as a sample container application.  Yo
 
 ```
 $ git clone https://github.com/dperique/Kubernetes_tutorials.git
-$ cd grpc_demo
+$ cd beginners/grpc_demo
 $ kubectl config use-context dp-kub
 $ kubectl cluster-info
 ```
